@@ -18,4 +18,7 @@
 #define ptr_assert(_ptr, ...) if(!(_ptr)) {fprintf(stderr, __VA_ARGS__); exit(1);} // 0  (NULL) is bad
 #define sdl_assert(_ptr, ...) if((_ptr)) {fprintf(stderr, __VA_ARGS__); exit(1);} // 0 is good
 
+
+extern char *time_float_to_str(float time); //  to MM:SS:mSmSmS format
+
 #endif // UTILS_H

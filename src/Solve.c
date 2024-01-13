@@ -1,7 +1,6 @@
 #include "Solve.h"
 
 
-
 char *moves[3][6] = {
     {"U", "D", "F", "B", "R", "L"},
     {"U'", "D'", "F'", "B'", "R'", "L'"},
@@ -97,7 +96,7 @@ char *generate_scramble() {
 
 sqlite3 *db = NULL;
 
-int callback(void *xxx, int argc, char **argv, char **col_names) {
+int callback(void *data, int argc, char **argv, char **col_names) {
     for (int i=0; i<argc; i++) {
         printf("%s: %s\n", col_names[i], argv[i] ? argv[i] : "NULL");
     }
@@ -156,6 +155,58 @@ void solve_save(uint8_t cube_type, float solve_time, char *scramble) {
     }
     printf("Solve saved successfully.\n");
 }
+
+
+
+
+
+static int __time_callback(void *__time_str, int argc, char **argv, char **col_names) {
+    strcpy((char *)__time_str, argv[0]);
+    return 0;
+}
+
+char *get_best_time() {
+    ptr_assert(db, ":get_most_recent_time(): database not initialized\n");
+
+    char sql[128] = "";
+    char time_type_str[32] = "";
+    strcpy(sql, "SELECT TIME from SOLVES \
+            ORDER BY TIME ASC \
+            LIMIT 1;"
+    );
+    strcpy(time_type_str, "Best solve");
+
+    char *time_str = NULL;
+    time_str = malloc(sizeof(char) * (64)); // 64 should be enough
+    ptr_assert(time_str, "get_time(): error allocating memory for time_str");
+    char *errmsg = 0;
+
+    int rc = sqlite3_exec(db, sql, __time_callback, time_str, &errmsg);
+    if (rc != SQLITE_OK) {
+        fprintf(stderr, "get_time(): Error getting the most recent time in the database: %s\n", errmsg);
+        sqlite3_free(errmsg);
+        exit(1);
+    }
+
+    // if there are no rows, callback is not called at all!
+    // therefore, the time_str will still just be the empty string
+    // so we can test that
+
+    float time = 0.0f;
+    if (strlen(time_str) > 0) {
+        // this means success, otherwise, it will just use the 0.0
+        sscanf(time_str, "%f", &time);
+    }
+    
+    char *formatted_time = time_float_to_str(time);
+    strcpy(time_str, ""); // to initialize, not sure if important but
+    sprintf(time_str, "%s: %s", time_type_str, formatted_time);
+    free(formatted_time);
+
+    return time_str;
+}
+
+
 
 
 void solve_print() {

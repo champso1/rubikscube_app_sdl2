@@ -79,21 +79,18 @@ void rw_render_scramble(RenderWindow *rw, SDL_Texture *scramble_texture) {
 
 
 
-void rw_render_inspection_text(RenderWindow *rw, SDL_Texture *inspection_text_texture) {
-    ptr_assert(rw, "rw_render_inspection_text(): rw is null\n");
-    ptr_assert(inspection_text_texture, "rw_render_inspection_text(): inspection_text_texture is null\n");
-
+void rw_render_text(RenderWindow *rw, SDL_Texture *text_texture, int x, int y) {
+    ptr_assert(rw, "rw_render_text(): rw is null\n");
+    ptr_assert(text_texture, "rw_render_text(): text_texture is null\n");
 
     int w, h;
-    SDL_QueryTexture(inspection_text_texture, NULL, NULL, &w, &h);
+    SDL_QueryTexture(text_texture, NULL, NULL, &w, &h);
+    x -= w/2;
+    y -= h/2;
     
-    SDL_Rect dst;
-    dst.x = (WIN_WIDTH / 2) - (w / 2);
-    dst.y = (WIN_HEIGHT / 2) - (h / 2);
-    dst.w = w;
-    dst.h = h;
+    SDL_Rect dst = (SDL_Rect){.x = x, .y = y, .w = w, .h = h};
 
-    SDL_RenderCopy(rw->renderer, inspection_text_texture, NULL, &dst);
+    SDL_RenderCopy(rw->renderer, text_texture, NULL, &dst);
 }
 
 
@@ -116,3 +113,109 @@ void rw_render_scroller(RenderWindow *rw, Scroller *scroller, bool hovering) {
     sdl_assert(SDL_RenderCopy(rw->renderer, scroller->textures[scroller->current_type], NULL, &dst),
     "rw_render_scroller(): error copying scroller texture to renderer: %s\n", SDL_GetError());
 }
+
+
+
+
+
+
+
+
+
+/* void init_main_state(MainState *m,
+                    char * (*scramble_generate_func)(void),
+                    char * (*get_best_time_func)(void),
+                    void (*solve_save)(uint8_t, float, char *),
+                    RenderWindow *rw,
+                    Font_Info *font_info
+) {
+    // no ptr_assert, this is the address of stack_allocated memory
+
+    m->get_best_time = get_best_time_func;
+    m->generate_scramble = scramble_generate_func;
+    m->solve_save = solve_save;
+
+    m->solving = false;
+    m->inspecting = false;
+    m->scrambling = true;
+    m->solve_ready = false;
+
+    m->running = true;
+
+    m->current_time = 0.0f;
+    m->previous_time = 0.0f;
+
+    char *scramble = (* m->generate_scramble)();
+    m->textures[SCRAMBLE_TEXTURE] = ttf_render_scramble(rw, font_info->fonts[SCRAMBLE_FONT], scramble, SDL_COLOR_BLACK);
+    m->scramble = scramble;
+
+    char *best_time = (* m->get_best_time)();
+    m->textures[BEST_TIME_TEXTURE] = ttf_render_text(rw, font_info->fonts[OTHER_FONT], best_time, SDL_COLOR_BLACK);
+    m->best_time = best_time;
+
+    m->textures[INSPECTION_TEXTURE] = ttf_render_text(rw, font_info->fonts[INSPECT_FONT], "Inspecting...", SDL_COLOR_WHITE);
+
+}
+
+bool handle_input(MainState *m, RenderWindow *rw, Font_Info *font_info, Scroller *scroller) {
+    while(SDL_PollEvent(&m->event)) {
+        if (m->event.type == SDL_QUIT) {
+            m->running = false;
+            return false;
+        } else if (m->event.type == SDL_KEYDOWN) {
+            switch (m->event.key.keysym.sym) {
+                case SDLK_SPACE: {
+                    if (m->solving) {
+                        (* m->solve_save)(scroller->current_type, m->current_time, m->scramble);
+                        m->previous_time = m->current_time;
+
+                        SDL_DestroyTexture(m->textures[SCRAMBLE_TEXTURE]);
+                        free(m->scramble);
+                        m->scramble = (* m->generate_scramble)();
+                        m->textures[SCRAMBLE_TEXTURE] = ttf_render_scramble(rw, font_info->fonts[SCRAMBLE_FONT], m->scramble, SDL_COLOR_BLACK);
+
+                        SDL_DestroyTexture(m->textures[BEST_TIME_TEXTURE]);
+                        free(m->best_time);
+                        m->best_time = (* m->get_best_time());
+                        m->textures[BEST_TIME_TEXTURE] = ttf_render_text(rw, font_info->fonts[OTHER_FONT], m->best_time, SDL_COLOR_BLACK);
+
+                        m->solving = false;
+                        m->scrambling = true;
+                    } else if (m->scrambling) {
+                        m->inspecting = true;
+                        m->scrambling = false;
+                    }
+                } break;
+                case SDLK_f: {
+                    free(m->scramble);
+                    m->scramble = (* m->generate_scramble)();
+                    m->textures[SCRAMBLE_TEXTURE] = ttf_render_text(rw, font_info->fonts[SCRAMBLE_FONT], m->scramble, SDL_COLOR_BLACK);
+                } break;
+                case SDLK_ESCAPE: {
+                    m->running = false;
+                    return false;
+                }
+            }
+        } else if (m->event.type == SDL_KEYUP) {
+            if (m->inspecting && !m->solve_ready) {
+                m->solve_ready = true;
+            } else if (m->inspecting && m->solve_ready) {
+                m->inspecting = false;
+                m->solving = true;
+                m->solve_ready = false;
+            }
+        }
+    }
+    return true;
+}
+
+void destroy_main_state(MainState *m) {
+    for (int i=0; i<NUM_STATE_TEXTURES; i++) {
+        if (m->textures[i] != NULL) SDL_DestroyTexture(m->textures[i]);
+    }
+    if (m->best_time != NULL) free(m->best_time);
+    if (m->scramble != NULL) free(m->scramble);
+}
+
+
+ */

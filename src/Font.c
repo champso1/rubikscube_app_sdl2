@@ -23,7 +23,7 @@ Font_Info *ttf_load_fonts(const char *filepath) {
 }
 
 
-SDL_Texture *ttf_render_time(RenderWindow* rw, Font_Info *font_info, float time, SDL_Color color) {
+SDL_Texture *ttf_render_time(RenderWindow* rw, TTF_Font *font, float time, SDL_Color color) {
     int mins = time / 60; 
     int secs = floorf(time); // should give what's before decimal (6.789 -> 6)
     int ms = floorf(1000.0f * (time - secs)); // should give everything past the decimal (6.789 -> .789) 789 / 100 7
@@ -33,7 +33,7 @@ SDL_Texture *ttf_render_time(RenderWindow* rw, Font_Info *font_info, float time,
     sprintf(time_str, "%d%d:%d%d.%d%d%d", mins/10, mins % 10, secs/10, secs % 10, ms / 100, (ms - (ms/100)*100) / 10, ms % 10);
 
 
-    SDL_Surface *time_surface = TTF_RenderUTF8_Solid(font_info->fonts[TIME_FONT], time_str, color);
+    SDL_Surface *time_surface = TTF_RenderUTF8_Solid(font, time_str, color);
     ptr_assert(time_surface, SDL_GetError());
 
     SDL_Texture *time_texture = SDL_CreateTextureFromSurface(rw->renderer, time_surface);
@@ -44,11 +44,10 @@ SDL_Texture *ttf_render_time(RenderWindow* rw, Font_Info *font_info, float time,
 }
 
 
-SDL_Texture *ttf_render_scramble(RenderWindow* rw, Font_Info *font_info, char *scramble, SDL_Color color) {
+SDL_Texture *ttf_render_scramble(RenderWindow* rw, TTF_Font *font, char *scramble, SDL_Color color) {
     ptr_assert(rw, "ttf_render_scramble(): rw is null\n");
-    ptr_assert(font_info, "ttf_render_scramble(): font_info is null\n");
 
-    printf("Original scramble: %s\n", scramble);
+    // printf("Original scramble: %s\n", scramble);
 
     size_t newline_pos = strcspn(scramble, "\n");
     char scramble1[128] = ""; // apparently initializing this all to a blank string fixes the weird bug
@@ -58,11 +57,11 @@ SDL_Texture *ttf_render_scramble(RenderWindow* rw, Font_Info *font_info, char *s
     memcpy(scramble2, scramble + newline_pos + 1, sizeof(char) * (strlen(scramble) - (newline_pos + 1)));
     scramble2[strlen(scramble2)] = 0; // null terminator!
 
-    printf("Scramble1: %s\nScramble2: %s\n", scramble1, scramble2);
+    // printf("Scramble1: %s\nScramble2: %s\n", scramble1, scramble2);
 
-    SDL_Surface *scramble_surface1 = TTF_RenderUTF8_Blended(font_info->fonts[SCRAMBLE_FONT], scramble1, color);
+    SDL_Surface *scramble_surface1 = TTF_RenderUTF8_Blended(font, scramble1, color);
     ptr_assert(scramble_surface1, SDL_GetError());
-    SDL_Surface *scramble_surface2 = TTF_RenderUTF8_Blended(font_info->fonts[SCRAMBLE_FONT], scramble2, color);
+    SDL_Surface *scramble_surface2 = TTF_RenderUTF8_Blended(font, scramble2, color);
     ptr_assert(scramble_surface2, SDL_GetError());
 
     SDL_Surface *main_surface = SDL_CreateRGBSurface(0,
@@ -98,22 +97,21 @@ SDL_Texture *ttf_render_scramble(RenderWindow* rw, Font_Info *font_info, char *s
 }
 
 
-SDL_Texture *ttf_render_inspection_text(
+SDL_Texture *ttf_render_text(
     RenderWindow *rw,
-    Font_Info *font_info,
-    char *inspection_text,
+    TTF_Font *font,
+    char *text,
     SDL_Color color
 ) {
-    ptr_assert(rw, "ttf_render_inspection_text(): rw is null\n");
-    ptr_assert(font_info, "ttf_render_inspection_text(): font_info is null\n");
+    ptr_assert(rw, "ttf_render_text(): rw is null\n");
 
-    SDL_Surface *inspection_text_surface = TTF_RenderUTF8_Blended(font_info->fonts[INSPECT_FONT], inspection_text, color);
-    ptr_assert(inspection_text_surface, SDL_GetError());
+    SDL_Surface *text_surface = TTF_RenderUTF8_Blended(font, text, color);
+    ptr_assert(text_surface, SDL_GetError());
 
-    SDL_Texture *inspection_text_texture = SDL_CreateTextureFromSurface(rw->renderer, inspection_text_surface);
-    ptr_assert(inspection_text_texture, SDL_GetError());
+    SDL_Texture *text_texture = SDL_CreateTextureFromSurface(rw->renderer, text_surface);
+    ptr_assert(text_texture, SDL_GetError());
 
-    return inspection_text_texture;
+    return text_texture;
 }
 
 

@@ -65,32 +65,14 @@ typedef struct {
 
 
 
-
-/**
- * This calls initialiation functions for sdl stuff, sdl_image stuff, and sdl_ttf stuff.
- * 
- * \param window_name The name for the window, passed to `SDL_CreateWindow()` 
- * \param SDL_flags The flags to be passed to `SDL_Init()`
- * \param IMG_flags The flags to be passed to `IMG_Init()`
- * \param window_flags The flags to be passed to `SDL_CreateWindow()`
- * \param renderer_flags The flags to be passed to `SDL_CreateRenderer()`
- * 
- * \returns A pointer to a RenderWindow (or program exits if there is a failure)
-*/
-extern RenderWindow *rw_init(
-    const char  *window_name,
-    Uint32      SDL_flags,
-    int         IMG_flags,
-    Uint32      window_flags,
-    Uint32      renderer_flags
-);
-
-/**
- * This calls the associated SDL destory/cleanup functions for the renderers and windows.
- * \param rw The RenderWindow pointer containing the renderer and window
- * \returns Nothing
-*/
-extern void            rw_cleanup(RenderWindow *rw);
+extern RenderWindow     *rw_init(
+                            const char  *window_name,
+                            Uint32      SDL_flags,
+                            int         IMG_flags,
+                            Uint32      window_flags,
+                            Uint32      renderer_flags
+                        );
+extern void             rw_cleanup(RenderWindow *rw);
 
 
 
@@ -105,38 +87,10 @@ static inline void rw_present(RenderWindow *rw) {
     SDL_RenderPresent(rw->renderer);
 }
 
-/**
- * Renders the time texture
- * 
- * \param rw Pointer to `RenderWindow` structure
- * \param text Pointer to the texture containing the time
- * 
- * \returns Nothing
-*/
 extern void rw_render_time(RenderWindow *rw, SDL_Texture *time_texture);
-
-
-/**
- * Renders the scramble
- * 
- * \param rw Pointer to `RenderWindow` structure
- * \param text Pointer to the texture containing the scramble
- * 
- * \returns Nothing
-*/
 extern void rw_render_scramble(RenderWindow *rw, SDL_Texture *scramble_texture);
-
-
-/**
- * Renders text to show during inspection time
- * 
- * \param rw Pointer to `RenderWindow` structure
- * \param inspection_text_texture Texture of the text.
- * 
- * \returns Nothing.
-*/
-extern void rw_render_inspection_text(RenderWindow *rw, SDL_Texture *inspection_text_texture);
-
+extern void rw_render_text(RenderWindow *rw, SDL_Texture *text_texture, int x, int y);
+extern void rw_render_scroller(RenderWindow *rw, Scroller *scroller, bool hovering);
 
 
 
@@ -146,85 +100,16 @@ extern void rw_render_inspection_text(RenderWindow *rw, SDL_Texture *inspection_
 ***********  SCROLLER  ***********
 **********************************/
 
-/**
- * Turns text into a scroller texture, where the text (black) is rendered in a gray box
- * 
- * \param rw The `RenderWindow`.
- * \param font The font to use.
- * \param text The text to render.
- * 
- * \returns An `SDL_Texture *` to be used for `scroller_init()`
-*/
-extern SDL_Texture *scroller_generate_texture(RenderWindow *rw, TTF_Font *font, const char *text);
-
-
-/** 
- * Generates a scroller with all the textures for all the different cube types
- * 
- * \param rw The `RenderWindow` structure.
- * \param font The font to use.
-*/
-extern Scroller *scroller_init(RenderWindow *rw, TTF_Font *font);
-
-/**
- * Internal function to be used in the `scroller_check_click()`, where it will,
- * on click, cycle the cube type to the next type
- * 
- * \param scroller The scroller.
- * 
- * \returns Nothing.
-*/
 static inline void __scroller_cycle_type(Scroller *scroller) {
     // won't need to assert; this is used inside another function which already has checked
     scroller->current_type = (scroller->current_type + 1) % NUM_CUBE_TYPES;
 }
 
-/** 
- * As of now, this just outputs a message to the console if the surface is clicked.
- * 
- * \param mouse_x Mouse x position
- * \param mouse_y Mouse y position
- * \param scroller_texture The scroller.
- * 
- * \returns Nothing
-*/
-extern void scroller_check_click(int mouse_x, int mouse_y, Scroller *scroller);
-
-
-/**
- * Similar to `scroller_check_click`, but this just checks if the mouse is currently hovering over the scroller
- * 
- * \param mouse_x Mouse x position
- * \param mouse_y Mouse y position
- * \param scroller The scroller.
- * 
- * \returns A boolean: `true` if the mouse is hovering over the texture, `false` if not.
-*/
-extern bool scroller_check_hover(int mouse_x, int mouse_y, Scroller *scroller);
-
-
-/**
- * Renders a scroller texture at a predefined position.
- * If the mouse is hovering over the scroller, the padding is increased so that the scroller appears larger
- * 
- * \param rw Pointer to `RenderWindow` structure
- * \param scroller_texture The scroller texture to render
- * \param hovering A boolean signifying if the mouse is hovering over the scroller or not
- * 
- * \returns Nothing.
-*/
-extern void rw_render_scroller(RenderWindow *rw, Scroller *scroller, bool hovering);
-
-
-
-/**
- * Frees memory allocated in a `Scroller`
- * 
- * \param scroller The `Scroller`
- * 
- * \returns Nothing. 
-*/
-extern void scroller_free(Scroller *scroller);
+extern SDL_Texture  *scroller_generate_texture(RenderWindow *rw, TTF_Font *font, const char *text);
+extern Scroller     *scroller_init(RenderWindow *rw, TTF_Font *font);
+extern void         scroller_check_click(int mouse_x, int mouse_y, Scroller *scroller);
+extern bool         scroller_check_hover(int mouse_x, int mouse_y, Scroller *scroller);
+extern void         scroller_free(Scroller *scroller);
 
 
 
@@ -250,86 +135,94 @@ typedef enum {
     SCRAMBLE_FONT,
     INSPECT_FONT,
     SCROLLER_FONT,
+    OTHER_FONT,
     FONT_COUNT
 } Fonts;
 
-const static int Font_Sizes[FONT_COUNT] = {72, 24, 24, 30};
+const static int Font_Sizes[FONT_COUNT] = {72, 24, 24, 30, 16};
 
 typedef struct {
     TTF_Font *fonts[FONT_COUNT];
 } Font_Info;
 
-/**
- * Initializes a Font_Info structure containing all the different font sizes
- * 
- * \param filepath Path to the .ttf file
- * 
- * \returns A pointer to a `Font_Info` structure containing the initialized data.
-*/
-extern Font_Info *ttf_load_fonts(const char *filepath);
-
-/**
- * Renders a time in the format MM::SS::mmm into an `SDL_Texture`
- * 
- * \param rw Pointer to `RenderWindow` structure
- * \param font_info Pointer to `Font_Info` structure
- * \param time time is a float in seconds
- * \param color Color the time should be
- * 
- * \returns `SDL_Texture *` containing the rendered time 
- * which can then be passed to `rw_render_time()`.
-*/
-extern SDL_Texture *ttf_render_time(
-    RenderWindow *rw,
-    Font_Info *font_info,
-    float time,
-    SDL_Color color
-);
-
-/**
- * Renders the scramble to a texture.
- * 
- * \param rw Pointer to `RenderWindow` structure
- * \param font_info Pointer to `Font_Info` structure
- * \param scramble String containing the scramble.
- * \param color Color the scramble will be
- * 
- * \returns `SDL_Texture *` containing the scramble text 
- * which can then be passed to `rw_render_scramble()`.
-*/
-extern SDL_Texture *ttf_render_scramble(
-    RenderWindow *rw,
-    Font_Info *font_info,
-    char *scramble,
-    SDL_Color color
-);
-
-/**
- * Creates a texture of the text to show during inspection time
- * 
- * \param rw Pointer to `RenderWindow` structure
- * \param font_info Pointer to `Font_Info structure
- * \param inspection_text The text to be rendered to a texture
- * \param color Color the text will be
- * 
- * \returns `SDL_Texture *` containing the text. 
- * To be passed to `rw_render_inspection_text()`.
-*/
-extern SDL_Texture *ttf_render_inspection_text(
-    RenderWindow *rw,
-    Font_Info *font_info,
-    char *inspection_text,
-    SDL_Color color
-);
 
 
-/**
- * Closes the fonts that were opened from `ttf_load_font()`
- * 
- * \param font_info Pointer to `Font_Info` struct
- * \returns Nothing
-*/
-extern void ttf_free_fonts(Font_Info *font_info);   
+extern Font_Info    *ttf_load_fonts(const char *filepath);
+extern SDL_Texture  *ttf_render_time(        // in MM:SS:mSmSmS format
+                        RenderWindow *rw,
+                        TTF_Font *font,
+                        float time,
+                        SDL_Color color
+                    );
+extern SDL_Texture  *ttf_render_scramble(RenderWindow *rw,
+                        TTF_Font *font,
+                        char *scramble,
+                        SDL_Color color
+                    );
+extern SDL_Texture  *ttf_render_text(RenderWindow *rw,
+                        TTF_Font *font,
+                        char *text,
+                        SDL_Color color
+                    );
+extern void         ttf_free_fonts(Font_Info *font_info);   
+
+
+
+
+
+
+
+
+
+
+
+
+
+// more functions
+
+/* enum {
+    SCRAMBLE_TEXTURE,
+    INSPECTION_TEXTURE,
+    TIME_TEXTURE,
+    BEST_TIME_TEXTURE,
+    NUM_STATE_TEXTURES
+} MainState_Textures;
+
+typedef struct {
+    float previous_time;
+    float current_time;
+    char *scramble;
+    char *best_time;
+    bool solving;
+    bool inspecting;
+    bool scrambling;
+    bool solve_ready;
+    bool running;
+    SDL_Event event;
+    char *  (*get_best_time)(void);
+    char *  (*generate_scramble)(void);
+    void    (*solve_save)(uint8_t, float, char *);
+
+    SDL_Texture *textures[NUM_STATE_TEXTURES];
+} MainState; 
+
+
+extern void     init_main_state(
+                    MainState * main_state,
+                    char * (*scramble_generate_func)(void),
+                    char * (*get_best_time_func)(void),
+                    void (*solve_save)(uint8_t, float, char *),
+                    RenderWindow *rw,
+                    Font_Info *font_info
+                );
+extern bool     handle_input(
+                    MainState *main_state,
+                    RenderWindow *rw,
+                    Font_Info *font_info,
+                    Scroller *scroller
+                );
+extern void     render_textures(MainState *main_state);
+extern void     destroy_main_state(MainState *main_state); */
 
 
 

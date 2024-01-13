@@ -16,10 +16,15 @@ int main(int argc, char *argv[]) {
 
     init_sql_db("res/sql/solves.db");
 
+    SDL_DisplayMode mode;
+    sdl_assert(SDL_GetDisplayMode(0, 0, &mode), "main(): could not get display mode\n");
+    
+    int refresh_rate = mode.refresh_rate;
+
     // some defaults:
     char *scramble = generate_scramble();
-    SDL_Texture *scramble_texture = ttf_render_scramble(rw, font_info, scramble, SDL_COLOR_BLACK);
-    SDL_Texture *inspection_text_texture = ttf_render_inspection_text(rw, font_info, "Inspecting...", SDL_COLOR_WHITE);
+    SDL_Texture *scramble_texture = ttf_render_scramble(rw, font_info->fonts[SCRAMBLE_FONT], scramble, SDL_COLOR_BLACK);
+    SDL_Texture *inspection_text_texture = ttf_render_text(rw, font_info->fonts[INSPECT_FONT], "Inspecting...", SDL_COLOR_WHITE);
     SDL_Texture *time_texture;
 
     bool solving = false;
@@ -29,6 +34,9 @@ int main(int argc, char *argv[]) {
 
     float current_time = 0.0f;
     float previous_time = 0.0f;
+
+    char *best_time = get_best_time();
+    SDL_Texture *best_time_texture = ttf_render_text(rw, font_info->fonts[OTHER_FONT], best_time, SDL_COLOR_BLACK);
 
     bool running = true;
     SDL_Event event;
@@ -50,9 +58,13 @@ int main(int argc, char *argv[]) {
 
                             SDL_DestroyTexture(scramble_texture);
                             free(scramble);
-                            
                             scramble = generate_scramble();
-                            scramble_texture = ttf_render_scramble(rw, font_info, scramble, SDL_COLOR_BLACK);
+                            scramble_texture = ttf_render_scramble(rw, font_info->fonts[SCRAMBLE_FONT], scramble, SDL_COLOR_BLACK);
+                            
+                            free(best_time);
+                            SDL_DestroyTexture(best_time_texture);
+                            best_time = get_best_time();
+                            best_time_texture = ttf_render_text(rw, font_info->fonts[OTHER_FONT], best_time, SDL_COLOR_BLACK);
 
                             solving = false;
                             scrambling = true;
@@ -66,7 +78,7 @@ int main(int argc, char *argv[]) {
                     case SDLK_f: {
                         free(scramble);
                         scramble = generate_scramble();
-                        scramble_texture = ttf_render_scramble(rw, font_info, scramble, SDL_COLOR_BLACK);
+                        scramble_texture = ttf_render_scramble(rw, font_info->fonts[SCRAMBLE_FONT], scramble, SDL_COLOR_BLACK);
                     } break;
                     case SDLK_ESCAPE: {
                         running = false;
@@ -100,22 +112,23 @@ int main(int argc, char *argv[]) {
             rw_set_bg_color(rw, SDL_COLOR_RED);
             rw_clear(rw);
 
-            time_texture = ttf_render_time(rw, font_info, previous_time, SDL_COLOR_BLACK);
+            time_texture = ttf_render_time(rw, font_info->fonts[TIME_FONT], previous_time, SDL_COLOR_BLACK);
 
             rw_render_scroller(rw, scroller, hovering);
             rw_render_time(rw, time_texture);
             rw_render_scramble(rw, scramble_texture);
+            rw_render_text(rw, best_time_texture, WIN_WIDTH/2, (7*WIN_HEIGHT)/8 + 15);
         } else if (inspecting) {
             rw_set_bg_color(rw, SDL_COLOR_BLUE);
             rw_clear(rw);
 
-            rw_render_inspection_text(rw, inspection_text_texture);
+            rw_render_text(rw, inspection_text_texture, WIN_WIDTH/2, WIN_HEIGHT/2);
         } else if (solving) {
             rw_set_bg_color(rw, SDL_COLOR_GREEN);
             rw_clear(rw);
 
-            time_texture = ttf_render_time(rw, font_info, current_time, SDL_COLOR_BLACK);
-            current_time += 1.0f/60.0f;
+            time_texture = ttf_render_time(rw, font_info->fonts[TIME_FONT], current_time, SDL_COLOR_BLACK);
+            current_time += 1.0f/((float)refresh_rate);
 
             rw_render_time(rw, time_texture);
         }
@@ -127,6 +140,7 @@ int main(int argc, char *argv[]) {
 
     if (scramble_texture != NULL) SDL_DestroyTexture(scramble_texture);
     if (time_texture != NULL) SDL_DestroyTexture(time_texture);
+    if (scramble != NULL) free(scramble);
 
     ttf_free_fonts(font_info);
     scroller_free(scroller);
