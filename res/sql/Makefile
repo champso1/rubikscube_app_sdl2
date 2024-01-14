@@ -1,7 +1,4 @@
 C_FLAGS = -Wall
 
-sql:
+all:
 	gcc sql.c $(C_FLAGS) -I ../../include -o bin/sql -lsqlite3
-
-setup:
-	gcc setup.c $(C_FLAGS) -I ../../include -o bin/setup -lsqlite3

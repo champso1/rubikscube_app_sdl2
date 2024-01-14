@@ -77,7 +77,7 @@ char *generate_scramble() {
     for (int i=0; i<SCRAMBLE_SIZE; i++) {
         strcat(scramble, scramble_arr[i]);
     }
-    strcat(scramble, "\0");
+    scramble[strlen(scramble) - 1] = 0;
     char *scramble_ptr = malloc((sizeof(char)) * strlen(scramble) + 1); // +1 for null terminator you stupid fucking dumbass
     ptr_assert(scramble_ptr, "generate_scramble(): error allocating memory for scramble_ptr\n");
 
@@ -120,31 +120,45 @@ void close_sql_db() {
 void solve_save(uint8_t cube_type, float solve_time, char *scramble) {
     ptr_assert(db, "solve_save(): database not initialized\n");
 
+
     //must make all apostrophes in the scramble double apostrophes for the sql insert
 
-    char scramble_text[256];
-    char *token = strtok(scramble, "'");
+    char scramble_text[256] = ""; //initialize. this fixes lots of things for some reason
+    char *scramble_text_saveptr;
+    int offset = 2;
+    if (scramble[strlen(scramble) - 1] == '\'' ) offset = 0;
+
+    char *token = strtok_r(scramble, "'", &scramble_text_saveptr);
     while (token != NULL) {
         strcat(scramble_text, token);
         strcat(scramble_text, "''");
 
-        token = strtok(NULL, "'");
+        token = strtok_r(NULL, "'", &scramble_text_saveptr);
     }
-    scramble_text[strlen(scramble_text)-3] = 0; //-3 will remove the trailing double apostrophes and the trailing space
+    scramble_text[strlen(scramble_text)-offset] = 0; //-3 will remove the trailing double apostrophes and the trailing space
+
+    // remove the newline so that it is formatted correctly
+    size_t newline_pos = strcspn(scramble_text, "\n");
+    size_t len = strlen(scramble_text);
+
+    memcpy(scramble_text + newline_pos, scramble_text + newline_pos + 1, sizeof(char) * (len - (newline_pos + 1)));
+    scramble_text[len - 1] = 0;
 
     time_t current_time;
     struct tm *time_info;
     char time_str[64];
-
     time(&current_time);
     time_info = localtime(&current_time);
-
     strftime(time_str, 64, "%c", time_info);
+
+    char *solve_time_str = time_float_to_str(solve_time);
 
     char sql[256];
     sprintf(sql, "INSERT INTO SOLVES (CUBE_TYPE, SCRAMBLE, TIME, DATE) \
-        VALUES ('%s', '%s', %.4f, '%s');", 
-        Cube_Types_str[cube_type], scramble_text, solve_time, time_str);
+        VALUES ('%s', '%s', '%s', '%s');", 
+        Cube_Types_str[cube_type], scramble_text, solve_time_str, time_str);
+    free(solve_time_str);
+
     char *errmsg;
 
     int rc = sqlite3_exec(db, sql, NULL, 0, &errmsg);
@@ -161,7 +175,7 @@ void solve_save(uint8_t cube_type, float solve_time, char *scramble) {
 
 
 static int __time_callback(void *__time_str, int argc, char **argv, char **col_names) {
-    strcpy((char *)__time_str, argv[0]);
+    strcat((char *)__time_str, argv[0]);
     return 0;
 }
 
@@ -179,6 +193,10 @@ char *get_best_time() {
     char *time_str = NULL;
     time_str = malloc(sizeof(char) * (64)); // 64 should be enough
     ptr_assert(time_str, "get_time(): error allocating memory for time_str");
+    strcpy(time_str, "");
+    strcat(time_str, "Best solve: ");
+    size_t time_strlen = strlen(time_str);
+
     char *errmsg = 0;
 
     int rc = sqlite3_exec(db, sql, __time_callback, time_str, &errmsg);
@@ -188,20 +206,10 @@ char *get_best_time() {
         exit(1);
     }
 
-    // if there are no rows, callback is not called at all!
-    // therefore, the time_str will still just be the empty string
-    // so we can test that
-
-    float time = 0.0f;
-    if (strlen(time_str) > 0) {
-        // this means success, otherwise, it will just use the 0.0
-        sscanf(time_str, "%f", &time);
+    // if there are no rows, it will just be the empty string
+    if (strlen(time_str) == time_strlen) {
+        strcat(time_str, "00:00.000");
     }
-    
-    char *formatted_time = time_float_to_str(time);
-    strcpy(time_str, ""); // to initialize, not sure if important but
-    sprintf(time_str, "%s: %s", time_type_str, formatted_time);
-    free(formatted_time);
 
     return time_str;
 }
