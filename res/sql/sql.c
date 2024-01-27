@@ -7,7 +7,12 @@
 
 #define ptr_assert(_ptr, ...) if(!(_ptr)) {fprintf(stderr, __VA_ARGS__); exit(1);}
 
+
+
 #define NUM_LINES_TO_SETUP 100
+
+
+
 
 static int callback(void *xxx, int argc, char **argv, char **col_names) {
     for (int i=0; i<argc; i++) {
@@ -24,6 +29,7 @@ static int table_info_callback(void *xxx, int argc, char **argv, char **col_name
     printf("\n\n");
     return 0;
 }
+
 
 
 
@@ -100,7 +106,7 @@ int main(int argc, char *argv[]) {
     char *create = "CREATE TABLE SOLVES(\
         CUBE_TYPE   varchar(16)     NOT NULL,\
         SCRAMBLE    varchar(256)    NOT NULL,\
-        TIME        varchar(16)     NOT NULL,\
+        TIME        REAL            NOT NULL,\
         DATE        varchar(64)     NOT NULL\
     );"; 
     char *print_table_info = "PRAGMA table_info(SOLVES);";
@@ -117,14 +123,17 @@ int main(int argc, char *argv[]) {
     char *select_best_time =    "SELECT TIME from SOLVES \
                                 ORDER BY TIME ASC \
                                 LIMIT 1;";
+    char *select_5_recent_times =   "SELECT TIME FROM SOLVES \
+                                    ORDER BY DATE DESC \
+                                    LIMIT 5;";
     char *delete = "DROP TABLE SOLVES;";
 
 
-    char *options[] = {create, print_table_info, insert, selectall, select1, select_most_recent_time, clear, select_best_time, delete};
+    char *options[] = {create, print_table_info, insert, selectall, select1, select_most_recent_time, clear, select_best_time, select_5_recent_times, delete};
 
-    char *options_str[] = {"-create", "-print_table_info", "-insert", "-select_all", "-select_recent_entry", "-select_recent_time", "-clear", "-select_best", "-delete"};
+    char *options_str[] = {"-create", "-print_table_info", "-insert", "-select_all", "-select_recent_entry", "-select_recent_time", "-clear", "-select_best", "-select_5_recent", "-delete"};
 
-    char *success_msgs[] = {"table created\n", "\n", "element inserted\n", "\n", "\n", "\n", "table cleared\n", "\n", "table deleted\n"};
+    char *success_msgs[] = {"table created\n", "\n", "element inserted\n", "\n", "\n", "\n", "table cleared\n", "\n", "\n", "table deleted\n"};
 
 
     /* INSERT STATEMENT IS SEPARATE */
@@ -136,9 +145,8 @@ int main(int argc, char *argv[]) {
         strcpy(date, argv[5]);
 
 
-        // POWERSHELL FUCKING HATES SPACES AND ALSO APOSTROPHES BUT ALSO QUOTATIONS! WHAT THE FUCK AM I SUPPOSED TO DO ABOUT THAT!!!
-
-        // TODO: fix this shit dawg
+        // POWERSHELL I WILL KILL YOU WHY DON'T YOU LIKE ANYTHING THAT I DO 
+        // TODO: fix this i guess
 
         sprintf(insert_stmt, "(%s, %s, %s, %s);", cube_type, scramble, time, date);
         strcat(insert, insert_stmt);
@@ -176,7 +184,7 @@ int main(int argc, char *argv[]) {
     if (strcmp(option, "-print_table_info") == 0) callback_func = table_info_callback;
 
     if (!is_command) {
-        fprintf(stderr, "invalid command brother\n");
+        fprintf(stderr, "invalid command\n");
         sqlite3_close(db);
         exit(1);
     }

@@ -18,7 +18,6 @@ int main(int argc, char *argv[]) {
 
     SDL_DisplayMode mode;
     sdl_assert(SDL_GetDisplayMode(0, 0, &mode), "main(): could not get display mode\n");
-    
     int refresh_rate = mode.refresh_rate;
 
     // some defaults:
@@ -37,6 +36,10 @@ int main(int argc, char *argv[]) {
 
     char *best_time = get_best_time();
     SDL_Texture *best_time_texture = ttf_render_text(rw, font_info->fonts[OTHER_FONT], best_time, SDL_COLOR_BLACK);
+    
+    char *avg5 = get_avg5();
+    SDL_Texture *avg5_texture = ttf_render_text(rw, font_info->fonts[OTHER_FONT], avg5, SDL_COLOR_BLACK);
+
 
     bool running = true;
     SDL_Event event;
@@ -61,10 +64,15 @@ int main(int argc, char *argv[]) {
                             scramble = generate_scramble();
                             scramble_texture = ttf_render_scramble(rw, font_info->fonts[SCRAMBLE_FONT], scramble, SDL_COLOR_BLACK);
                             
-                            free(best_time);
                             SDL_DestroyTexture(best_time_texture);
+                            free(best_time);
                             best_time = get_best_time();
                             best_time_texture = ttf_render_text(rw, font_info->fonts[OTHER_FONT], best_time, SDL_COLOR_BLACK);
+
+                            SDL_DestroyTexture(avg5_texture);
+                            free(avg5);
+                            avg5 = get_avg5();
+                            avg5_texture = ttf_render_text(rw, font_info->fonts[OTHER_FONT], avg5, SDL_COLOR_BLACK);
 
                             solving = false;
                             scrambling = true;
@@ -118,6 +126,7 @@ int main(int argc, char *argv[]) {
             rw_render_time(rw, time_texture);
             rw_render_scramble(rw, scramble_texture);
             rw_render_text(rw, best_time_texture, WIN_WIDTH/2, (7*WIN_HEIGHT)/8 + 15);
+            rw_render_text(rw, avg5_texture, WIN_WIDTH/2, (7*WIN_HEIGHT)/8 + 30);
         } else if (inspecting) {
             rw_set_bg_color(rw, SDL_COLOR_BLUE);
             rw_clear(rw);
@@ -140,7 +149,10 @@ int main(int argc, char *argv[]) {
 
     if (scramble_texture != NULL) SDL_DestroyTexture(scramble_texture);
     if (time_texture != NULL) SDL_DestroyTexture(time_texture);
+    if (avg5_texture != NULL) SDL_DestroyTexture(avg5_texture);
+
     if (scramble != NULL) free(scramble);
+    if (avg5 != NULL) free(avg5);
 
     ttf_free_fonts(font_info);
     scroller_free(scroller);

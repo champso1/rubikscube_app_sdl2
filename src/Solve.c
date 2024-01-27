@@ -123,7 +123,7 @@ void solve_save(uint8_t cube_type, float solve_time, char *scramble) {
 
     //must make all apostrophes in the scramble double apostrophes for the sql insert
 
-    char scramble_text[256] = ""; //initialize. this fixes lots of things for some reason
+    char scramble_text[256] = "";
     char *scramble_text_saveptr;
     int offset = 2;
     if (scramble[strlen(scramble) - 1] == '\'' ) offset = 0;
@@ -135,7 +135,7 @@ void solve_save(uint8_t cube_type, float solve_time, char *scramble) {
 
         token = strtok_r(NULL, "'", &scramble_text_saveptr);
     }
-    scramble_text[strlen(scramble_text)-offset] = 0; //-3 will remove the trailing double apostrophes and the trailing space
+    scramble_text[strlen(scramble_text)-offset] = 0;
 
     // remove the newline so that it is formatted correctly
     size_t newline_pos = strcspn(scramble_text, "\n");
@@ -144,20 +144,17 @@ void solve_save(uint8_t cube_type, float solve_time, char *scramble) {
     memcpy(scramble_text + newline_pos, scramble_text + newline_pos + 1, sizeof(char) * (len - (newline_pos + 1)));
     scramble_text[len - 1] = 0;
 
-    time_t current_time;
-    struct tm *time_info;
-    char time_str[64];
-    time(&current_time);
-    time_info = localtime(&current_time);
-    strftime(time_str, 64, "%c", time_info);
-
-    char *solve_time_str = time_float_to_str(solve_time);
+    time_t current_date;
+    struct tm *date_info;
+    char date_str[64];
+    time(&current_date);
+    date_info = localtime(&current_date);
+    strftime(date_str, 64, "%c", date_info);
 
     char sql[256];
     sprintf(sql, "INSERT INTO SOLVES (CUBE_TYPE, SCRAMBLE, TIME, DATE) \
-        VALUES ('%s', '%s', '%s', '%s');", 
-        Cube_Types_str[cube_type], scramble_text, solve_time_str, time_str);
-    free(solve_time_str);
+        VALUES ('%s', '%s', %.4f, '%s');", 
+        Cube_Types_str[cube_type], scramble_text, solve_time, date_str);
 
     char *errmsg;
 
@@ -174,43 +171,128 @@ void solve_save(uint8_t cube_type, float solve_time, char *scramble) {
 
 
 
-static int __time_callback(void *__time_str, int argc, char **argv, char **col_names) {
-    strcat((char *)__time_str, argv[0]);
+int __time_callback(void *__time, int argc, char **argv, char **col_names) {
+    float time;
+    if (*argv == NULL) {
+        time = -1;
+    } else {
+        sscanf(*argv, "%f", &time);
+    }
+    *(float *)__time = time;
     return 0;
 }
 
 char *get_best_time() {
     ptr_assert(db, ":get_most_recent_time(): database not initialized\n");
 
-    char sql[128] = "";
-    char time_type_str[32] = "";
-    strcpy(sql, "SELECT TIME from SOLVES \
-            ORDER BY TIME ASC \
-            LIMIT 1;"
-    );
-    strcpy(time_type_str, "Best solve");
+    char sql[] =    "SELECT TIME from SOLVES \
+                    ORDER BY TIME ASC \
+                    LIMIT 1;";
 
-    char *time_str = NULL;
+    char *time_str;
     time_str = malloc(sizeof(char) * (64)); // 64 should be enough
     ptr_assert(time_str, "get_time(): error allocating memory for time_str");
     strcpy(time_str, "");
     strcat(time_str, "Best solve: ");
-    size_t time_strlen = strlen(time_str);
+
+    float time = 0.0f;
+    float *_time = &time;
 
     char *errmsg = 0;
 
-    int rc = sqlite3_exec(db, sql, __time_callback, time_str, &errmsg);
+    int rc = sqlite3_exec(db, sql, __time_callback, _time, &errmsg);
     if (rc != SQLITE_OK) {
         fprintf(stderr, "get_time(): Error getting the most recent time in the database: %s\n", errmsg);
         sqlite3_free(errmsg);
         exit(1);
     }
 
-    // if there are no rows, it will just be the empty string
-    if (strlen(time_str) == time_strlen) {
+    if (*_time < 0) {
         strcat(time_str, "00:00.000");
+    } else {
+        char *__time = time_float_to_str(time);
+        strcat(time_str, __time);
+        free(__time);
     }
 
+    return time_str;
+}
+
+
+
+
+
+
+
+
+int __get_avg5_callback(void *data, int argc, char **argv, char **col_names) {
+    float time = -1;
+    if (*argv != NULL) {
+        sscanf(*argv, "%f", &time);
+    }
+
+    ((Avg5 *)data)->times[((Avg5 *)data)->ptr_loc++] = time; //this line is wild
+    
+    return 0;
+}
+
+
+char *get_avg5() {
+    ptr_assert(db, "get_avg5(): database pointer is null\n");
+
+
+    Avg5 avg;
+    avg.ptr_loc = 0;
+
+    char *errmsg;
+    char *sql =     "SELECT TIME FROM SOLVES \
+                    ORDER BY DATE DESC \
+                    LIMIT 5";
+
+    int rc = sqlite3_exec(db, sql, __get_avg5_callback, &avg, &errmsg);
+    if (rc != SQLITE_OK) {
+        fprintf(stderr, "get_avg5(): error executing sql statement: %s\n", errmsg);
+        sqlite3_free(errmsg);
+        sqlite3_close(db);
+        exit(1);
+    }
+
+    char *time_str = NULL;
+    time_str = malloc(sizeof(char) * 64);
+    ptr_assert(time_str, "get_avg5(): error allocating memory for time_str\n");
+    strcpy(time_str, "Average of last 5: ");
+
+
+    if (avg.ptr_loc != 5) {
+        char *bruh = time_float_to_str(0.0f);
+        strcat(time_str, bruh);
+        free(bruh);
+
+        return time_str;
+    }
+
+    // otherwise, the avg struct should now contain all the stuff
+    float total_avg = 0.0f;
+    bool invalid = false;
+    for (int i=0; i<5; i++) {
+        if (avg.times[i] < 0) {
+            invalid = true;
+            break;
+        }
+        total_avg += avg.times[i];
+    }
+
+
+    if (invalid) {
+        char *temp = time_float_to_str(0.0f);
+        strcat(time_str, temp);
+        free(temp);
+    } else {
+        total_avg /= 5.0f;
+        char *temp = time_float_to_str(total_avg);
+        strcat(time_str, temp);
+        free(temp);
+    }
     return time_str;
 }
 

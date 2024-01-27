@@ -19,10 +19,10 @@ extern char *generate_scramble();
 extern sqlite3 *db;
 
 /*
-CUBE_TYPE   varchar(16)     NOT NULL,
-SCRAMBLE    varchar(256)    NOT NULL,
-TIME        varchar(16)     NOT NULL,
-DATE        varchar(64)     NOT NULL
+Cube_Type   varchar(16)     NOT NULL,
+Scramble    varchar(256)    NOT NULL,
+Time        REAL            NOT NULL,
+Date        varchar(64)     NOT NULL
 */
 
 
@@ -33,7 +33,20 @@ extern void     close_sql_db();
 extern void     solve_save(uint8_t cube_type, float time, char *scramble);
 
 
+extern int      __time_callback(void *__time, int argc, char **argv, char **col_names);
 extern char     *get_best_time();
+
+
+
+typedef struct {
+    float times[5];
+    int ptr_loc;
+} Avg5;
+
+extern int      __get_avg5_callback(void *data, int argc, char **argv, char **col_names);
+extern char     *get_avg5();
+
+
 extern void     solve_print();
 
 #endif // SOLVE_H
