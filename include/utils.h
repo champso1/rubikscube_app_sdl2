@@ -21,4 +21,15 @@
 
 extern char *time_float_to_str(float time); //  to MM:SS:mSmSmS format
 
+
+
+typedef struct {
+    float x;
+    float y;
+} Vector2f;
+typedef struct {
+    int x;
+    int y;
+} Vector2i;
+
 #endif // UTILS_H

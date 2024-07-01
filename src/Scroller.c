@@ -1,6 +1,12 @@
 #include "Window.h"
 
-const char *Cube_Types_str[NUM_CUBE_TYPES] = {"3x3x3", "4x4x4", "5x5x5", "6x6x6", "7x7x7"};
+const char *Cube_Types_str[NUM_CUBE_TYPES] = {
+    "3x3x3",
+    "4x4x4",
+    "5x5x5",
+    "6x6x6",
+    "7x7x7"
+};
 
 
 Scroller *scroller_init(RenderWindow *rw, TTF_Font *font) {

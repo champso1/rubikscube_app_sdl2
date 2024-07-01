@@ -40,6 +40,9 @@ int main(int argc, char *argv[]) {
     char *avg5 = get_avg5();
     SDL_Texture *avg5_texture = ttf_render_text(rw, font_info->fonts[OTHER_FONT], avg5, SDL_COLOR_BLACK);
 
+    DropDown dd;
+    dropdown_init(&dd, rw, font_info->fonts[OTHER_FONT], (Vector2i){.x=100, .y=100}, (Vector2i){.x=50, .y=50});
+    dropdown_add_text(&dd, rw, font_info->fonts[OTHER_FONT], "test");
 
     bool running = true;
     SDL_Event event;
@@ -113,6 +116,7 @@ int main(int argc, char *argv[]) {
         SDL_GetMouseState(&mouse_x, &mouse_y);
         bool hovering = scroller_check_hover(mouse_x, mouse_y, scroller);
 
+        rw_render_dropdown(rw, &dd);
         
         if (scrambling) { //scrambling
             current_time = 0;
@@ -154,6 +158,7 @@ int main(int argc, char *argv[]) {
     if (scramble != NULL) free(scramble);
     if (avg5 != NULL) free(avg5);
 
+    dropdown_close(&dd);
     ttf_free_fonts(font_info);
     scroller_free(scroller);
     close_sql_db();

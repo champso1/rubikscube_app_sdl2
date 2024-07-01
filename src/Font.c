@@ -34,10 +34,10 @@ SDL_Texture *ttf_render_time(RenderWindow* rw, TTF_Font *font, float time, SDL_C
 
 
     SDL_Surface *time_surface = TTF_RenderUTF8_Solid(font, time_str, color);
-    ptr_assert(time_surface, SDL_GetError());
+    ptr_assert(time_surface, "%s", SDL_GetError());
 
     SDL_Texture *time_texture = SDL_CreateTextureFromSurface(rw->renderer, time_surface);
-    ptr_assert(time_surface, SDL_GetError());
+    ptr_assert(time_surface, "%s", SDL_GetError());
 
     SDL_FreeSurface(time_surface);
     return time_texture;
@@ -60,9 +60,9 @@ SDL_Texture *ttf_render_scramble(RenderWindow* rw, TTF_Font *font, char *scrambl
     // printf("Scramble1: %s\nScramble2: %s\n", scramble1, scramble2);
 
     SDL_Surface *scramble_surface1 = TTF_RenderUTF8_Blended(font, scramble1, color);
-    ptr_assert(scramble_surface1, SDL_GetError());
+    ptr_assert(scramble_surface1, "%s", SDL_GetError());
     SDL_Surface *scramble_surface2 = TTF_RenderUTF8_Blended(font, scramble2, color);
-    ptr_assert(scramble_surface2, SDL_GetError());
+    ptr_assert(scramble_surface2, "%s", SDL_GetError());
 
     SDL_Surface *main_surface = SDL_CreateRGBSurface(0,
         scramble_surface1->w, 
@@ -106,10 +106,10 @@ SDL_Texture *ttf_render_text(
     ptr_assert(rw, "ttf_render_text(): rw is null\n");
 
     SDL_Surface *text_surface = TTF_RenderUTF8_Blended(font, text, color);
-    ptr_assert(text_surface, SDL_GetError());
+    ptr_assert(text_surface, "%s", SDL_GetError());
 
     SDL_Texture *text_texture = SDL_CreateTextureFromSurface(rw->renderer, text_surface);
-    ptr_assert(text_texture, SDL_GetError());
+    ptr_assert(text_texture, "%s", SDL_GetError());
 
     return text_texture;
 }

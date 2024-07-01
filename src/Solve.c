@@ -151,7 +151,7 @@ void solve_save(uint8_t cube_type, float solve_time, char *scramble) {
     date_info = localtime(&current_date);
     strftime(date_str, 64, "%c", date_info);
 
-    char sql[256];
+    char sql[512];
     sprintf(sql, "INSERT INTO SOLVES (CUBE_TYPE, SCRAMBLE, TIME, DATE) \
         VALUES ('%s', '%s', %.4f, '%s');", 
         Cube_Types_str[cube_type], scramble_text, solve_time, date_str);
@@ -183,7 +183,7 @@ int __time_callback(void *__time, int argc, char **argv, char **col_names) {
 }
 
 char *get_best_time() {
-    ptr_assert(db, ":get_most_recent_time(): database not initialized\n");
+    ptr_assert(db, ":get_best_time(): database not initialized\n");
 
     char sql[] =    "SELECT TIME from SOLVES \
                     ORDER BY TIME ASC \

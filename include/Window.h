@@ -65,6 +65,17 @@ typedef struct {
 
 
 
+typedef struct {
+    SDL_Texture **textures; // the textures of the items to show for each element in the list
+    size_t textures_len;
+    size_t textures_cap;
+    int current;
+    Vector2i pos; // where the dropdown menu is located on the screen
+    Vector2i size; // how much space it takes up
+} DropDown;
+
+
+
 extern RenderWindow     *rw_init(
                             const char  *window_name,
                             Uint32      SDL_flags,
@@ -91,8 +102,7 @@ extern void rw_render_time(RenderWindow *rw, SDL_Texture *time_texture);
 extern void rw_render_scramble(RenderWindow *rw, SDL_Texture *scramble_texture);
 extern void rw_render_text(RenderWindow *rw, SDL_Texture *text_texture, int x, int y);
 extern void rw_render_scroller(RenderWindow *rw, Scroller *scroller, bool hovering);
-
-
+extern void rw_render_dropdown(RenderWindow *rw, DropDown *dd);
 
 
 
@@ -112,6 +122,9 @@ extern bool         scroller_check_hover(int mouse_x, int mouse_y, Scroller *scr
 extern void         scroller_free(Scroller *scroller);
 
 
+extern void dropdown_init(DropDown *dd, RenderWindow *rw, TTF_Font *font, Vector2i pos, Vector2i size);
+extern void dropdown_close(DropDown *dd);
+extern void dropdown_add_text(DropDown *dd, RenderWindow *rw, TTF_Font *font, const char *text);
 
 
 

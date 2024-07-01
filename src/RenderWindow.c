@@ -116,7 +116,20 @@ void rw_render_scroller(RenderWindow *rw, Scroller *scroller, bool hovering) {
 
 
 
+void rw_render_dropdown(RenderWindow *rw, DropDown *dd) {
+    ptr_assert(rw, "rw_render_dropdown(): rw is null\n");   
+    ptr_assert(dd->textures, "rw_render_dropdown(): dd->textures is null\n");
 
+    SDL_Rect r = (SDL_Rect){.x = dd->pos.x, .y=dd->pos.y, .h = dd->size.y, .w = dd->size.x};
+
+    if (dd->textures_len < 1) {
+        fprintf(stderr, "rw_render_dropdown(): there are no textures to render!\n");
+        exit(1);
+    }
+
+    sdl_assert(SDL_RenderCopy(rw->renderer, dd->textures[0], NULL, &r),
+    "rw_render_dropdown(): error copying dropdown texture to renderer: %s\n", SDL_GetError());
+}
 
 
 
