@@ -1,4 +1,7 @@
 /.vscode
+/build
+/.archive
 
 *.txt
 *.exe
+*.ttf

@@ -11,14 +11,16 @@ int main(int argc, char *argv[]) {
     srand((unsigned int)time(0));
     
     RenderWindow *rw = rw_init("test", SDL_INIT_EVERYTHING, IMG_INIT_PNG, SDL_WINDOW_RESIZABLE, SDL_RENDERER_PRESENTVSYNC);
-    Font_Info *font_info = ttf_load_fonts("res/Consolas.ttf");
+    Font_Info *font_info = ttf_load_fonts("./res/Consolas.ttf");
     Scroller *scroller = scroller_init(rw, font_info->fonts[SCROLLER_FONT]);
 
-    init_sql_db("res/sql/solves.db");
+    init_sql_db("./res/sql/solves.db");
 
     SDL_DisplayMode mode;
-    sdl_assert(SDL_GetDisplayMode(0, 0, &mode), "main(): could not get display mode\n");
-    int refresh_rate = mode.refresh_rate;
+    sdl_assert(SDL_GetDisplayMode(0, 0, &mode), "main(): could not get display mode: %s\n", SDL_GetError());
+    printf("Refresh rate: %d\n", mode.refresh_rate);
+    // int refresh_rate = mode.refresh_rate;
+    int refresh_rate = 144; // not working on my monitor...
 
     // some defaults:
     char *scramble = generate_scramble();
